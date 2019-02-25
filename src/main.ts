@@ -8,7 +8,7 @@ var player: Phaser.Sprite;
 
 var cursor: Phaser.CursorKeys;
 
-var hasTouchedGound;
+var hasTouchedGound: boolean;
 
 var bmd: Phaser.BitmapData;
 var floor: Phaser.Sprite;
