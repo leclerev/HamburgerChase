@@ -1,18 +1,30 @@
 var game: Phaser.Game;
+
 var scoreFont: Phaser.BitmapText;
 var scoreValue: number;
 var scoreText: string;
+
 var player: Phaser.Sprite;
+
 var cursor: Phaser.CursorKeys;
+
 var hasTouchedGound;
+
 var bmd: Phaser.BitmapData;
 var floor: Phaser.Sprite;
 var collider: Phaser.Group;
-var playerHealth: number;
+
 var colls: Array<Phaser.Sprite>, hamburger: Phaser.Sprite;
 var isHit: boolean;
 var waitImmort: number = 3;
+
 var wait: number = 0;
+
+var gameOver: boolean = false;
+var gameTime: number = 1; // minutes
+var actualTime: number = 0;
+var timeFont: Phaser.BitmapText;
+var timeText: string;
 
 class SimpleGame {
 
@@ -21,14 +33,13 @@ class SimpleGame {
     }
 
     preload() {
-        game.load.bitmapFont('gem', 'assets/font/gem.png', 'assets/font/gem.xml');
-        game.load.spritesheet('dude', 'assets/sprites/dude.png', 32, 48);
+        game.load.bitmapFont('gem', './assets/font/gem.png', './assets/font/gem.xml');
+        game.load.spritesheet('dude', './assets/sprites/dude.png', 32, 48);
     }
 
     create() {
         // INIT
         hasTouchedGound = false;
-        playerHealth = 3;
         isHit = false;
         waitImmort = 3;
         wait = 0;
@@ -45,9 +56,12 @@ class SimpleGame {
         scoreText = "Score: ";
         scoreValue = 0;
 
+        timeText = "Time left: ";
+
         game.time.desiredFps = 30;
 
         scoreFont = game.add.bitmapText(20, 20, 'gem', "", 34);
+        timeFont = game.add.bitmapText(20, 50, 'gem', "", 34);
 
         player = game.add.sprite(350, 400, 'dude');
         player.anchor.x = 0.5;
@@ -79,6 +93,7 @@ class SimpleGame {
         // Collider creations
         colls.push(createCollider(1000, 500));
         colls.push(createCollider(1200, 400));
+        colls.push(createCollider(1500, 450));
     }
 
     update() {
@@ -94,43 +109,49 @@ class SimpleGame {
             hamburger.body.moves = false;
         }
 
-        var isDead = game.physics.arcade.collide(player, hamburger);
-
-        colliderManager(colls[0], isDead);
-        colliderManager(colls[1], isDead);
+        for(let i = 0; i < colls.length; i++) {
+            colliderManager(colls[i], gameOver);
+        }
 
         //Collisions
         var isGrounded = game.physics.arcade.collide(player, floor);
-        var hasTouched = game.physics.arcade.collide(player, collider);
+        var hasTouched = game.physics.arcade.overlap(player, collider);
 
-        if(isDead) {
-            player.tint = 5;
+        if(gameOver) {
             player.animations.stop();
-        }
-
-        if(hasTouched && wait < game.time.now/1000 && !isDead) {
-            wait = game.time.now/1000 + waitImmort;
-            player.x -= 100;
+        } else {
+            actualTime += 30;
         }
         
         if(!hasTouchedGound)
             hasTouchedGound = true
 
-        if (hasTouchedGound && !isDead)
+        if (hasTouchedGound && !gameOver)
             scoreValue += 30;
+            
+        if(hasTouched && (wait < game.time.now/1000) && !gameOver) {
+            wait = game.time.now/1000 + waitImmort;
+            scoreValue -= 10000;
+        }
 
         scoreFont.text = scoreText + Math.floor(scoreValue / 1000).toString();
-        //this.game.debug.text("Time:" + this.game.time.now/1000, 20, 100);
+        let actualSeconds: number = Math.floor(60 - (actualTime / 1000) % 60);
+        timeFont.text = timeText + Math.floor(gameTime - (actualTime / 1000) / 60).toString() + ":" + (actualSeconds < 10 ? "0" : "") + actualSeconds.toString();
+        if(Math.floor(gameTime - (actualTime / 1000) / 60) == 0 && actualSeconds == 0)
+            gameOver = true;
 
-        if (cursor.up.isDown && isGrounded && game.physics.arcade.gravity.y <= 500) {
+        if (cursor.up.isDown && isGrounded && game.physics.arcade.gravity.y <= 500 && !gameOver) {
             player.body.velocity.y = -400;
         }
 
-        if (cursor.down.isDown) {
+        if (cursor.down.isDown && !gameOver) {
             player.body.velocity.y = player.body.velocity.y < 0 ? 0 : player.body.velocity.y;
             game.physics.arcade.gravity.y = 2500;
-        } else {
+        } else if (!gameOver) {
             game.physics.arcade.gravity.y = 500;
+        } else {
+            game.physics.arcade.gravity.y = 0;
+            player.body.velocity.y = 0;
         }
     }
 
@@ -148,13 +169,12 @@ function createCollider(startx: number = 1000, starty: number = 500) {
     bmd.ctx.closePath();
 
     collid.body.moves = false;
-    collid.body.checkCollision.left = false;
         
     return collid
 }
 
-function colliderManager(collid: Phaser.Sprite, isPlayerDead: boolean) {
-    if(!isPlayerDead) {
+function colliderManager(collid: Phaser.Sprite, isGameOver: boolean) {
+    if(!isGameOver) {
         collid.x-=5;
         if(collid.x <= -50)
             outOfBounds(collid);
