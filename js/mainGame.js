@@ -29,26 +29,71 @@ var timeFont;
 var timeText;
 var MainGame = /** @class */ (function () {
     function MainGame() {
-        game = new Phaser.Game(800, 600, Phaser.AUTO, 'content' /*, { preload: this.preload, create: this.create, update: this.update }*/);
+        game = new Phaser.Game(800, 600, Phaser.AUTO, 'content');
+        var allOptions;
+        var selectedOption;
+        var selectionFont;
+        var keys;
         game.state.add("menu", {
-            preload: function () {
-                // load button picture
-            },
-            create: function () {
-                game.add.button(game.world.centerX - 95, 400, 'button', actionOnClick, this, 2, 1, 0);
-                function actionOnClick() {
-                    game.state.start("play");
-                }
-            }
-        });
-        game.state.add("play", {
             preload: function () {
                 game.load.bitmapFont('gem', './assets/font/gem.png', './assets/font/gem.xml');
                 game.load.spritesheet('dude', './assets/sprites/dude.png', 32, 48);
                 game.load.json('pattern', "json/pattern.json");
+                cursor = game.input.keyboard.createCursorKeys();
             },
             create: function () {
+                allOptions = [];
+                selectedOption = 0;
+                var menuFont = game.add.bitmapText(game.world.centerX, 40, 'gem', "", 50);
+                var menuText = "Hamburger Chase";
+                menuFont.text = menuText;
+                menuFont.x = game.world.centerX - menuFont.textWidth / 2;
+                var playFont = game.add.bitmapText(game.world.centerX, 300, 'gem', "", 30);
+                playFont.text = "Play";
+                playFont.x = game.world.centerX - menuFont.textWidth / 2;
+                allOptions.push(playFont);
+                var highScoreFont = game.add.bitmapText(game.world.centerX, 350, 'gem', "", 30);
+                highScoreFont.text = "Highscore";
+                highScoreFont.x = game.world.centerX - menuFont.textWidth / 2;
+                allOptions.push(highScoreFont);
+                selectionFont = game.add.bitmapText(game.world.centerX, 40, 'gem', "", 30);
+                selectionFont.text = "->";
+                selectionFont.x = game.world.centerX - menuFont.textWidth / 2 - 50;
+                keys = game.input.keyboard.addKeys({ "enter": Phaser.Keyboard.ENTER, "space": Phaser.Keyboard.SPACEBAR });
+            },
+            update: function () {
+                if (cursor.up.justDown) {
+                    selectedOption--;
+                    if (selectedOption < 0)
+                        selectedOption = allOptions.length - 1;
+                }
+                if (cursor.down.justDown) {
+                    selectedOption++;
+                    if (selectedOption > allOptions.length - 1)
+                        selectedOption = 0;
+                }
+                selectionFont.y = allOptions[selectedOption].y;
+                if (keys.enter.justDown || keys.space.justDown) {
+                    switch (selectedOption) {
+                        case 0:
+                            game.state.start("play");
+                            break;
+                    }
+                }
+            }
+        });
+        game.state.add("play", {
+            /*preload: function() {
+            },*/
+            create: function () {
                 // INIT
+                holdJumpTime = 0;
+                maxHoldJumpTime = 10;
+                id = 0;
+                gameOver = false;
+                gameTime = 1; // minutes
+                actualTime = 0;
+                blinkTime = 0;
                 hasTouchedGound = false;
                 isHit = false;
                 waitImmort = 3;
@@ -81,7 +126,7 @@ var MainGame = /** @class */ (function () {
                 player.body.setSize(20, 32, 5, 16);
                 player.animations.add('right', [5, 6, 7, 8], 10, true);
                 player.animations.play('right');
-                cursor = game.input.keyboard.createCursorKeys();
+                //cursor = game.input.keyboard.createCursorKeys();
                 bmd = game.add.bitmapData(800, 50);
                 bmd.ctx.beginPath();
                 bmd.ctx.rect(0, 0, 800, 50);
@@ -92,11 +137,26 @@ var MainGame = /** @class */ (function () {
                 bmd.ctx.closePath();
                 floor.body.immovable = true;
                 floor.body.moves = false;
+                // --------HAMBURGER-------
+                bmd = game.add.bitmapData(50, 600);
+                bmd.ctx.beginPath();
+                bmd.ctx.rect(0, 0, 50, 600);
+                bmd.ctx.fillStyle = '#ff0000';
+                bmd.ctx.fill();
+                hamburger = collider.create(0, 0, bmd);
+                bmd.ctx.closePath();
+                hamburger.body.moves = false;
+                // ------------------------
                 // Collider creations
                 colls.push(createCollider(actualPattern[0][0], actualPattern[0][1]));
                 colls.push(createCollider(actualPattern[1][0], actualPattern[1][1]));
                 colls.push(createCollider(actualPattern[2][0], actualPattern[2][1]));
                 bonus = createBonus(actualPattern[3][0], actualPattern[3][1]);
+                game.world.bringToTop(collider);
+                game.world.bringToTop(floor);
+                game.world.bringToTop(player);
+                game.world.bringToTop(scoreFont);
+                game.world.bringToTop(timeFont);
                 function createCollider(startx, starty) {
                     if (startx === void 0) { startx = 1000; }
                     if (starty === void 0) { starty = 500; }
@@ -134,16 +194,6 @@ var MainGame = /** @class */ (function () {
                 }
             },
             update: function () {
-                if (!hamburger) {
-                    bmd = game.add.bitmapData(50, 600);
-                    bmd.ctx.beginPath();
-                    bmd.ctx.rect(0, 0, 50, 600);
-                    bmd.ctx.fillStyle = '#ff0000';
-                    bmd.ctx.fill();
-                    hamburger = collider.create(0, 0, bmd);
-                    bmd.ctx.closePath();
-                    hamburger.body.moves = false;
-                }
                 for (var i = 0; i < colls.length; i++) {
                     colliderManager(colls[i], gameOver);
                 }
@@ -154,9 +204,10 @@ var MainGame = /** @class */ (function () {
                 var getBonus = game.physics.arcade.overlap(player, bonus);
                 if (gameOver) {
                     player.animations.stop();
+                    game.state.start("menu");
                 }
                 else {
-                    actualTime += 30;
+                    actualTime += game.time.desiredFps;
                 }
                 if (!hasTouchedGound)
                     hasTouchedGound = true;
@@ -254,7 +305,7 @@ var MainGame = /** @class */ (function () {
                     collider.x = 800;
                     collider.y = actualPattern[collider.data.id][1];
                 }
-            },
+            }
         });
         /* game.state.add("enterHS", {
 
