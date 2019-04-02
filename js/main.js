@@ -43,32 +43,34 @@ var SimpleGame = /** @class */ (function () {
         wait = 0;
         colls = [];
         isPlayerHit = false;
-        pattern = [
+        pattern =
             [
-                [1000, 500],
-                [1200, 400],
-                [1400, 450],
-                [1300, 430]
-            ],
-            [
-                [1000, 510],
-                [1200, 500],
-                [1400, 400],
-                [1300, 430]
-            ],
-            [
-                [1000, 420],
-                [1200, 500],
-                [1400, 410],
-                [1300, 430]
-            ],
-            [
-                [1000, 450],
-                [1200, 510],
-                [1400, 500],
-                [1300, 430]
-            ]
-        ];
+                [
+                    [1000, 500],
+                    [1200, 400],
+                    [1400, 450],
+                    [1300, 430]
+                ],
+                [
+                    [1000, 510],
+                    [1200, 500],
+                    [1400, 400],
+                    [1300, 430]
+                ],
+                [
+                    [1000, 420],
+                    [1200, 500],
+                    [1400, 410],
+                    [1300, 430]
+                ],
+                [
+                    [1000, 450],
+                    [1200, 510],
+                    [1400, 500],
+                    [1300, 430]
+                ]
+            ];
+        console.log(pattern[0]);
         oldPatternNum = Math.floor(Math.random() * pattern.length);
         actualPattern = pattern[oldPatternNum];
         game.physics.setBoundsToWorld();
@@ -81,7 +83,7 @@ var SimpleGame = /** @class */ (function () {
         bonusGroup.physicsBodyType = Phaser.Physics.ARCADE;
         scoreText = "Score: ";
         scoreValue = 0;
-        timeText = "Time left: ";
+        timeText = "Temps restant: ";
         game.time.desiredFps = 30;
         scoreFont = game.add.bitmapText(20, 20, 'gem', "", 34);
         timeFont = game.add.bitmapText(20, 50, 'gem', "", 34);

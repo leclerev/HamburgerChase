@@ -1,3 +1,4 @@
+
 var game: Phaser.Game;
 
 var scoreFont: Phaser.BitmapText;
@@ -17,8 +18,8 @@ var bmd: Phaser.BitmapData;
 var floor: Phaser.Sprite;
 var collider: Phaser.Group;
 var bonusGroup: Phaser.Group;
-var pattern: number[][];
-var actualPattern: number[];
+var pattern: number[][][];
+var actualPattern: number[][];
 var oldPatternNum: number;
 
 var colls: Array<Phaser.Sprite>, hamburger: Phaser.Sprite;
@@ -57,6 +58,7 @@ class SimpleGame {
         isPlayerHit = false;
 
         pattern =
+        [
             [
                 [1000, 500],
                 [1200, 400],
@@ -80,7 +82,10 @@ class SimpleGame {
                 [1200, 510],
                 [1400, 500],
                 [1300, 430]
-            ];
+            ]
+        ];
+
+        console.log(pattern[0]);
 
         oldPatternNum = Math.floor(Math.random() * pattern.length);
         actualPattern = pattern[oldPatternNum];
@@ -99,7 +104,7 @@ class SimpleGame {
         scoreText = "Score: ";
         scoreValue = 0;
 
-        timeText = "Time left: ";
+        timeText = "Temps restant: ";
 
         game.time.desiredFps = 30;
 
