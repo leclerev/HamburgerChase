@@ -14,6 +14,7 @@ var collider;
 var bonusGroup;
 var pattern;
 var actualPattern;
+var actualBonus;
 var oldPatternNum;
 var colls, hamburger;
 var bonus;
@@ -56,6 +57,10 @@ var MainGame = /** @class */ (function () {
                 highScoreFont.text = "Highscore";
                 highScoreFont.x = game.world.centerX - menuFont.textWidth / 2;
                 allOptions.push(highScoreFont);
+                var testFont = game.add.bitmapText(game.world.centerX, 400, 'gem', "", 30);
+                testFont.text = "Laliloulelo";
+                testFont.x = game.world.centerX - menuFont.textWidth / 2;
+                allOptions.push(testFont);
                 selectionFont = game.add.bitmapText(game.world.centerX, 40, 'gem', "", 30);
                 selectionFont.text = "->";
                 selectionFont.x = game.world.centerX - menuFont.textWidth / 2 - 50;
@@ -101,8 +106,9 @@ var MainGame = /** @class */ (function () {
                 colls = [];
                 isPlayerHit = false;
                 pattern = game.cache.getJSON("pattern", true);
-                oldPatternNum = Math.floor(Math.random() * pattern.length);
-                actualPattern = pattern[oldPatternNum];
+                oldPatternNum = Math.floor(Math.random() * pattern.patterns.length);
+                actualPattern = pattern.patterns[oldPatternNum].malus;
+                actualBonus = pattern.patterns[oldPatternNum].bonus;
                 game.physics.setBoundsToWorld();
                 game.physics.startSystem(Phaser.Physics.ARCADE);
                 collider = game.add.group();
@@ -148,10 +154,10 @@ var MainGame = /** @class */ (function () {
                 hamburger.body.moves = false;
                 // ------------------------
                 // Collider creations
-                colls.push(createCollider(actualPattern[0][0], actualPattern[0][1]));
-                colls.push(createCollider(actualPattern[1][0], actualPattern[1][1]));
-                colls.push(createCollider(actualPattern[2][0], actualPattern[2][1]));
-                bonus = createBonus(actualPattern[3][0], actualPattern[3][1]);
+                for (var i = 0; i < actualPattern.length; i++) {
+                    colls.push(createCollider(actualPattern[i][0], actualPattern[i][1]));
+                }
+                bonus = createBonus(actualBonus[0], actualBonus[1]);
                 game.world.bringToTop(collider);
                 game.world.bringToTop(floor);
                 game.world.bringToTop(player);
@@ -224,7 +230,7 @@ var MainGame = /** @class */ (function () {
                         player.alpha = 1;
                     }
                 }
-                if (getBonus && !bonus.data.isTaken) {
+                if (getBonus && !bonus.data.isTaken && bonus.visible) {
                     bonus.visible = false;
                     scoreValue += 3000;
                     bonus.data.isTaken = true;
@@ -264,11 +270,12 @@ var MainGame = /** @class */ (function () {
                         player.alpha = 1;
                 }
                 function getPattern() {
-                    var num = Math.floor(Math.random() * pattern.length);
+                    var num = Math.floor(Math.random() * pattern.patterns.length);
                     if (num == oldPatternNum)
                         getPattern();
                     else {
-                        actualPattern = pattern[num];
+                        actualPattern = pattern.patterns[num].malus;
+                        actualBonus = pattern.patterns[num].bonus;
                         oldPatternNum = num;
                     }
                 }
@@ -282,7 +289,8 @@ var MainGame = /** @class */ (function () {
                             if (collid.data.id == 0) {
                                 getPattern();
                             }
-                            outOfBounds(collid);
+                            collid.x = actualPattern[collid.data.id][0] - (200 * (collid.data.id + 1));
+                            collid.y = actualPattern[collid.data.id][1];
                         }
                     }
                 }
@@ -297,16 +305,15 @@ var MainGame = /** @class */ (function () {
                                 bonus.data.isTaken = true;
                             }
                             bonus.x = 800;
-                            bonus.y = actualPattern[3][1];
+                            bonus.y = actualBonus[1];
                         }
                     }
                 }
-                function outOfBounds(collider) {
-                    collider.x = 800;
-                    collider.y = actualPattern[collider.data.id][1];
-                }
             }
         });
+        /* game.state.add("endAnimation", {
+
+        });*/
         /* game.state.add("enterHS", {
 
         });*/

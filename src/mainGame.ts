@@ -18,8 +18,9 @@ var bmd: Phaser.BitmapData;
 var floor: Phaser.Sprite;
 var collider: Phaser.Group;
 var bonusGroup: Phaser.Group;
-var pattern: number[][][];
+var pattern: any;
 var actualPattern: number[][];
+var actualBonus: number[];
 var oldPatternNum: number;
 
 var colls: Array<Phaser.Sprite>, hamburger: Phaser.Sprite;
@@ -80,6 +81,12 @@ class MainGame {
 
                 allOptions.push(highScoreFont);
 
+                var testFont = game.add.bitmapText(game.world.centerX, 400, 'gem', "", 30);
+                testFont.text = "Laliloulelo";
+                testFont.x = game.world.centerX - menuFont.textWidth / 2;
+
+                allOptions.push(testFont);
+
                 selectionFont = game.add.bitmapText(game.world.centerX, 40, 'gem', "", 30);
                 selectionFont.text = "->";
                 selectionFont.x = game.world.centerX - menuFont.textWidth / 2 - 50;
@@ -138,8 +145,9 @@ class MainGame {
         
                 pattern = game.cache.getJSON("pattern", true);
         
-                oldPatternNum = Math.floor(Math.random() * pattern.length);
-                actualPattern = pattern[oldPatternNum];
+                oldPatternNum = Math.floor(Math.random() * pattern.patterns.length);
+                actualPattern = pattern.patterns[oldPatternNum].malus;
+                actualBonus = pattern.patterns[oldPatternNum].bonus;
         
                 game.physics.setBoundsToWorld();
                 game.physics.startSystem(Phaser.Physics.ARCADE);
@@ -205,11 +213,11 @@ class MainGame {
 
         
                 // Collider creations
-                colls.push(createCollider(actualPattern[0][0], actualPattern[0][1]));
-                colls.push(createCollider(actualPattern[1][0], actualPattern[1][1]));
-                colls.push(createCollider(actualPattern[2][0], actualPattern[2][1]));
+                for(let i = 0; i < actualPattern.length; i++) {
+                    colls.push(createCollider(actualPattern[i][0], actualPattern[i][1]));
+                }
         
-                bonus = createBonus(actualPattern[3][0], actualPattern[3][1]);
+                bonus = createBonus(actualBonus[0], actualBonus[1]);
                 
                 game.world.bringToTop(collider);
                 game.world.bringToTop(floor);
@@ -296,7 +304,7 @@ class MainGame {
                     }
                 }
         
-                if(getBonus && !bonus.data.isTaken) {
+                if(getBonus && !bonus.data.isTaken && bonus.visible) {
                     bonus.visible = false;
                     scoreValue += 3000;
                     bonus.data.isTaken = true;
@@ -341,10 +349,11 @@ class MainGame {
                 }
                 
                 function getPattern() {
-                    let num = Math.floor(Math.random() * pattern.length);
+                    let num = Math.floor(Math.random() * pattern.patterns.length);
                     if(num == oldPatternNum) getPattern();
                     else {
-                        actualPattern = pattern[num];
+                        actualPattern = pattern.patterns[num].malus;
+                        actualBonus = pattern.patterns[num].bonus;
                         oldPatternNum = num;
                     }
                 }
@@ -359,7 +368,8 @@ class MainGame {
                             if(collid.data.id == 0) {
                                 getPattern();
                             }
-                            outOfBounds(collid);
+                            collid.x = actualPattern[collid.data.id][0] - (200 * (collid.data.id + 1));
+                            collid.y = actualPattern[collid.data.id][1];
                         }
                     }
                 }
@@ -375,18 +385,17 @@ class MainGame {
                                 bonus.data.isTaken = true;
                             }
                             bonus.x = 800;
-                            bonus.y = actualPattern[3][1];
+                            bonus.y = actualBonus[1];
                         }
                     }
-                }
-                
-                function outOfBounds(collider: Phaser.Sprite) {
-                    collider.x = 800;
-                    collider.y = actualPattern[collider.data.id][1];
                 }
             }
                         
         });
+
+        /* game.state.add("endAnimation", {
+
+        });*/
 
         /* game.state.add("enterHS", {
 
