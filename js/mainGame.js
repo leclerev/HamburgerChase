@@ -35,6 +35,7 @@ var MainGame = /** @class */ (function () {
         var selectedOption;
         var selectionFont;
         var keys;
+        var nameChars = [];
         game.state.add("menu", {
             preload: function () {
                 game.load.bitmapFont('gem', './assets/font/gem.png', './assets/font/gem.xml');
@@ -81,7 +82,7 @@ var MainGame = /** @class */ (function () {
                 if (keys.enter.justDown || keys.space.justDown) {
                     switch (selectedOption) {
                         case 0:
-                            game.state.start("play");
+                            game.state.start("enterHS");
                             break;
                     }
                 }
@@ -210,7 +211,7 @@ var MainGame = /** @class */ (function () {
                 var getBonus = game.physics.arcade.overlap(player, bonus);
                 if (gameOver) {
                     player.animations.stop();
-                    game.state.start("menu");
+                    game.state.start("enterHS");
                 }
                 else {
                     actualTime += game.time.desiredFps;
@@ -221,7 +222,7 @@ var MainGame = /** @class */ (function () {
                     isPlayerHit = true;
                     wait = game.time.now / 1000 + waitImmort;
                     blinkTime = 0;
-                    scoreValue -= 10000;
+                    scoreValue -= 50;
                 }
                 if (isPlayerHit) {
                     playerBlink();
@@ -232,10 +233,10 @@ var MainGame = /** @class */ (function () {
                 }
                 if (getBonus && !bonus.data.isTaken && bonus.visible) {
                     bonus.visible = false;
-                    scoreValue += 3000;
+                    scoreValue += 15;
                     bonus.data.isTaken = true;
                 }
-                scoreFont.text = scoreText + Math.floor(scoreValue / 1000).toString();
+                scoreFont.text = scoreText + scoreValue.toString();
                 var actualSeconds = Math.floor(60 - (actualTime / 1000) % 60);
                 timeFont.text = timeText + Math.floor(gameTime - (actualTime / 1000) / 60).toString() + ":" + (actualSeconds < 10 ? "0" : "") + actualSeconds.toString();
                 if (Math.floor(gameTime - (actualTime / 1000) / 60) == 0 && actualSeconds == 0)
@@ -283,7 +284,7 @@ var MainGame = /** @class */ (function () {
                     if (!isGameOver) {
                         collid.x -= 10;
                         if (player.x == collid.x + collid.width) {
-                            scoreValue += 1000;
+                            scoreValue += 10;
                         }
                         if (collid.x <= -50) {
                             if (collid.data.id == 0) {
@@ -314,11 +315,29 @@ var MainGame = /** @class */ (function () {
         /* game.state.add("endAnimation", {
 
         });*/
-        /* game.state.add("enterHS", {
-
-        });*/
+        game.state.add("enterHS", {
+            create: function () {
+                var menuFont = game.add.bitmapText(game.world.centerX, 40, 'gem', "", 50);
+                var menuText = "Your score: " + scoreValue;
+                menuFont.text = menuText;
+                menuFont.x = game.world.centerX - menuFont.textWidth / 2;
+                var indexChar = 0;
+                for (var i = 0; i < 3; i++) {
+                    var letterFont = game.add.bitmapText(i * 120 + 250, 200, 'gem', "", 40);
+                    letterFont.text = "_";
+                    nameChars.push(letterFont);
+                }
+                for (var i = 0; i < 2; i++) {
+                    for (var j = 0; j < 13; j++) {
+                        var letterFont = game.add.bitmapText(j * 40 + 140, (i + 1) * 40 + 300, 'gem', "", 40);
+                        letterFont.text = String.fromCharCode(indexChar + 97);
+                        indexChar++;
+                    }
+                }
+            }
+        });
         /* game.state.add("highscore", {
-
+            
         });*/
         // INITIAL GAME STATE
         game.state.start("menu");
