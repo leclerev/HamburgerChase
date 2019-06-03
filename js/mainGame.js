@@ -17,8 +17,9 @@ var actualPattern;
 var actualBonus;
 var oldPatternNum;
 var colls, hamburger;
-var bonus;
+var bonuses;
 var id = 0;
+var idBonus = 0;
 var isHit;
 var waitImmort = 3;
 var wait = 0;
@@ -28,6 +29,34 @@ var actualTime = 0;
 var blinkTime = 0;
 var timeFont;
 var timeText;
+var Bonus;
+(function (Bonus) {
+    Bonus[Bonus["Aubergine"] = 0] = "Aubergine";
+    Bonus[Bonus["Banane"] = 1] = "Banane";
+    Bonus[Bonus["Brocolie"] = 2] = "Brocolie";
+    Bonus[Bonus["Carotte"] = 3] = "Carotte";
+    Bonus[Bonus["Cerises"] = 4] = "Cerises";
+    Bonus[Bonus["Choux"] = 5] = "Choux";
+    Bonus[Bonus["Orange"] = 6] = "Orange";
+    Bonus[Bonus["Fraise"] = 7] = "Fraise";
+    Bonus[Bonus["Pasteque"] = 8] = "Pasteque";
+    Bonus[Bonus["Pomme"] = 9] = "Pomme";
+    Bonus[Bonus["Tomate"] = 10] = "Tomate";
+})(Bonus || (Bonus = {}));
+var Malus;
+(function (Malus) {
+    Malus[Malus["Donut"] = 0] = "Donut";
+    Malus[Malus["DonutAlt"] = 1] = "DonutAlt";
+    Malus[Malus["Frites"] = 2] = "Frites";
+    Malus[Malus["Glace"] = 3] = "Glace";
+    Malus[Malus["Hamburger"] = 4] = "Hamburger";
+    Malus[Malus["HotDog"] = 5] = "HotDog";
+    Malus[Malus["Pizza"] = 6] = "Pizza";
+    Malus[Malus["Sandwich"] = 7] = "Sandwich";
+    Malus[Malus["Sucette"] = 8] = "Sucette";
+    Malus[Malus["SucetteAlt"] = 9] = "SucetteAlt";
+    Malus[Malus["SucreDOrge"] = 10] = "SucreDOrge";
+})(Malus || (Malus = {}));
 var MainGame = /** @class */ (function () {
     function MainGame() {
         game = new Phaser.Game(800, 600, Phaser.AUTO, 'content');
@@ -35,11 +64,13 @@ var MainGame = /** @class */ (function () {
         var selectedOption;
         var selectionFont;
         var keys;
-        var nameChars = [];
+        var nameChars = Array();
         game.state.add("menu", {
             preload: function () {
                 game.load.bitmapFont('gem', './assets/font/gem.png', './assets/font/gem.xml');
                 game.load.spritesheet('dude', './assets/sprites/dude.png', 32, 48);
+                game.load.spritesheet('bonus', './assets/sprites/bonussheet.png', 32, 32, 11);
+                game.load.spritesheet('malus', './assets/sprites/malussheet.png', 32, 32, 11);
                 game.load.json('pattern', "json/pattern.json");
                 cursor = game.input.keyboard.createCursorKeys();
             },
@@ -59,12 +90,14 @@ var MainGame = /** @class */ (function () {
                 highScoreFont.x = game.world.centerX - menuFont.textWidth / 2;
                 allOptions.push(highScoreFont);
                 var testFont = game.add.bitmapText(game.world.centerX, 400, 'gem', "", 30);
-                testFont.text = "Laliloulelo";
+                testFont.text = "Lalilulelo";
                 testFont.x = game.world.centerX - menuFont.textWidth / 2;
                 allOptions.push(testFont);
                 selectionFont = game.add.bitmapText(game.world.centerX, 40, 'gem', "", 30);
                 selectionFont.text = "->";
                 selectionFont.x = game.world.centerX - menuFont.textWidth / 2 - 50;
+                /*let bonus = game.add.sprite(10, 10, "bonus", Bonus.Banane);
+                let malus = game.add.sprite(50, 10, "malus", Malus.Sandwich);*/
                 keys = game.input.keyboard.addKeys({ "enter": Phaser.Keyboard.ENTER, "space": Phaser.Keyboard.SPACEBAR });
             },
             update: function () {
@@ -82,7 +115,10 @@ var MainGame = /** @class */ (function () {
                 if (keys.enter.justDown || keys.space.justDown) {
                     switch (selectedOption) {
                         case 0:
-                            game.state.start("enterHS");
+                            game.state.start("play");
+                            break;
+                        case 1:
+                            game.state.start("highscore");
                             break;
                     }
                 }
@@ -96,6 +132,7 @@ var MainGame = /** @class */ (function () {
                 holdJumpTime = 0;
                 maxHoldJumpTime = 10;
                 id = 0;
+                idBonus = 0;
                 gameOver = false;
                 gameTime = 1; // minutes
                 actualTime = 0;
@@ -105,6 +142,7 @@ var MainGame = /** @class */ (function () {
                 waitImmort = 3;
                 wait = 0;
                 colls = [];
+                bonuses = [];
                 isPlayerHit = false;
                 pattern = game.cache.getJSON("pattern", true);
                 oldPatternNum = Math.floor(Math.random() * pattern.patterns.length);
@@ -158,7 +196,8 @@ var MainGame = /** @class */ (function () {
                 for (var i = 0; i < actualPattern.length; i++) {
                     colls.push(createCollider(actualPattern[i][0], actualPattern[i][1]));
                 }
-                bonus = createBonus(actualBonus[0], actualBonus[1]);
+                for (var i = 0; i < actualBonus.length; i++)
+                    bonuses.push(createBonus(actualBonus[i][0], actualBonus[i][1]));
                 game.world.bringToTop(collider);
                 game.world.bringToTop(floor);
                 game.world.bringToTop(player);
@@ -168,15 +207,11 @@ var MainGame = /** @class */ (function () {
                     if (startx === void 0) { startx = 1000; }
                     if (starty === void 0) { starty = 500; }
                     var collid;
-                    bmd = game.add.bitmapData(50, 50);
-                    bmd.ctx.beginPath();
-                    bmd.ctx.rect(0, 0, 50, 50);
-                    bmd.ctx.fillStyle = '#ff0000';
-                    bmd.ctx.fill();
-                    collid = collider.create(startx, starty, bmd);
-                    bmd.ctx.closePath();
+                    collid = collider.create(startx, starty, "malus", game.rnd.integerInRange(0, 10));
                     collid.body.moves = false;
+                    collid.body.setSize(50, 50);
                     collid.data.id = id;
+                    collid.data.hasPassed = false;
                     id++;
                     return collid;
                 }
@@ -184,15 +219,13 @@ var MainGame = /** @class */ (function () {
                     if (startx === void 0) { startx = 1000; }
                     if (starty === void 0) { starty = 500; }
                     var bon;
-                    bmd = game.add.bitmapData(50, 50);
-                    bmd.ctx.beginPath();
-                    bmd.ctx.rect(0, 0, 50, 50);
-                    bmd.ctx.fillStyle = '#00ff00';
-                    bmd.ctx.fill();
-                    bon = bonusGroup.create(startx, starty, bmd);
-                    bmd.ctx.closePath();
+                    console.log(startx);
+                    bon = bonusGroup.create(startx, starty, "bonus", game.rnd.integerInRange(0, 10));
                     bon.body.moves = false;
                     bon.data.isTaken = false;
+                    bon.body.setSize(50, 50);
+                    bon.data.id = idBonus;
+                    idBonus++;
                     if (!willBonusBeCreated()) {
                         bon.visible = false;
                         bon.data.isTaken = true;
@@ -204,11 +237,12 @@ var MainGame = /** @class */ (function () {
                 for (var i = 0; i < colls.length; i++) {
                     colliderManager(colls[i], gameOver);
                 }
-                bonusManager(bonus, gameOver);
+                for (var i = 0; i < bonuses.length; i++)
+                    bonusManager(bonuses[i], gameOver);
                 //Collisions
                 var isGrounded = game.physics.arcade.collide(player, floor);
                 var hasTouched = game.physics.arcade.overlap(player, collider);
-                var getBonus = game.physics.arcade.overlap(player, bonus);
+                game.physics.arcade.overlap(player, bonusGroup, bonusCollisionHandler);
                 if (gameOver) {
                     player.animations.stop();
                     game.state.start("enterHS");
@@ -230,11 +264,6 @@ var MainGame = /** @class */ (function () {
                         isPlayerHit = false;
                         player.alpha = 1;
                     }
-                }
-                if (getBonus && !bonus.data.isTaken && bonus.visible) {
-                    bonus.visible = false;
-                    scoreValue += 15;
-                    bonus.data.isTaken = true;
                 }
                 scoreFont.text = scoreText + scoreValue.toString();
                 var actualSeconds = Math.floor(60 - (actualTime / 1000) % 60);
@@ -263,6 +292,13 @@ var MainGame = /** @class */ (function () {
                     game.physics.arcade.gravity.y = 0;
                     player.body.velocity.y = 0;
                 }
+                function bonusCollisionHandler(player, bonus) {
+                    if (!bonus.data.isTaken && bonus.visible) {
+                        bonus.visible = false;
+                        scoreValue += 15;
+                        bonus.data.isTaken = true;
+                    }
+                }
                 function playerBlink() {
                     blinkTime++;
                     if (blinkTime % 20 == 0 || blinkTime % 20 == 1 || blinkTime % 20 == 2 || blinkTime % 20 == 3)
@@ -283,8 +319,9 @@ var MainGame = /** @class */ (function () {
                 function colliderManager(collid, isGameOver) {
                     if (!isGameOver) {
                         collid.x -= 10;
-                        if (player.x == collid.x + collid.width) {
+                        if (player.x <= collid.x + collid.width && player.x >= collid.x && !collid.data.hasPassed) {
                             scoreValue += 10;
+                            collid.data.hasPassed = true;
                         }
                         if (collid.x <= -50) {
                             if (collid.data.id == 0) {
@@ -292,6 +329,9 @@ var MainGame = /** @class */ (function () {
                             }
                             collid.x = actualPattern[collid.data.id][0] - (200 * (collid.data.id + 1));
                             collid.y = actualPattern[collid.data.id][1];
+                            collid.data.hasPassed = false;
+                            var rnd = game.rnd.integerInRange(0, 10);
+                            collid.loadTexture("malus", rnd);
                         }
                     }
                 }
@@ -305,8 +345,11 @@ var MainGame = /** @class */ (function () {
                                 bonus.visible = false;
                                 bonus.data.isTaken = true;
                             }
-                            bonus.x = 800;
-                            bonus.y = actualBonus[1];
+                            else {
+                                bonus.loadTexture("bonus", game.rnd.integerInRange(0, 10));
+                            }
+                            bonus.x = actualBonus[bonus.data.id][0];
+                            bonus.y = actualBonus[bonus.data.id][1];
                         }
                     }
                 }
@@ -315,8 +358,12 @@ var MainGame = /** @class */ (function () {
         /* game.state.add("endAnimation", {
 
         });*/
+        var x = 33, y = 243;
+        var graphics;
+        var indexName = 0;
         game.state.add("enterHS", {
             create: function () {
+                keys = game.input.keyboard.addKeys({ "space": Phaser.Keyboard.SPACEBAR });
                 var menuFont = game.add.bitmapText(game.world.centerX, 40, 'gem', "", 50);
                 var menuText = "Your score: " + scoreValue;
                 menuFont.text = menuText;
@@ -325,7 +372,7 @@ var MainGame = /** @class */ (function () {
                 for (var i = 0; i < 3; i++) {
                     var letterFont = game.add.bitmapText(i * 120 + 250, 200, 'gem', "", 40);
                     letterFont.text = "_";
-                    nameChars.push(letterFont);
+                    nameChars[i] = letterFont;
                 }
                 for (var i = 0; i < 2; i++) {
                     for (var j = 0; j < 13; j++) {
@@ -334,16 +381,64 @@ var MainGame = /** @class */ (function () {
                         indexChar++;
                     }
                 }
+                graphics = game.add.graphics(100, 100);
+            },
+            update: function () {
+                graphics.lineStyle(2, 0xFFFFFF, 1);
+                var rect = graphics.drawRect(x, y, 35, 40);
+                if (cursor.up.justDown) {
+                    if (rect.y > 100)
+                        rect.y -= 40;
+                    else
+                        rect.y = 140;
+                }
+                if (cursor.down.justDown) {
+                    if (rect.y < 140)
+                        rect.y += 40;
+                    else
+                        rect.y = 100;
+                }
+                if (cursor.left.justDown) {
+                    if (rect.x > 100)
+                        rect.x -= 40;
+                    else
+                        rect.x = 580;
+                }
+                if (cursor.right.justDown) {
+                    if (rect.x < 580)
+                        rect.x += 40;
+                    else
+                        rect.x = 100;
+                }
+                if (keys.space.justDown) {
+                    var indexX = (rect.x - 100) / 40, indexY = (rect.y - 100) / 40;
+                    nameChars[indexName].text = String.fromCharCode(indexX + (indexY * 13) + 97).toUpperCase();
+                    if (indexName < 2)
+                        indexName++;
+                    else
+                        game.state.start("highscore");
+                }
             }
         });
-        /* game.state.add("highscore", {
-            
-        });*/
+        game.state.add("highscore", {
+            create: function () {
+                keys = game.input.keyboard.addKeys({ "enter": Phaser.Keyboard.ENTER, "space": Phaser.Keyboard.SPACEBAR });
+                var menuFont = game.add.bitmapText(game.world.centerX, 40, 'gem', "", 50);
+                var menuText = "Your score: " + scoreValue;
+                menuFont.text = menuText;
+                menuFont.x = game.world.centerX - menuFont.textWidth / 2;
+            },
+            update: function () {
+                if (keys.enter.justDown || keys.space.justDown) {
+                    game.state.start("menu");
+                }
+            }
+        });
         // INITIAL GAME STATE
         game.state.start("menu");
     }
     return MainGame;
 }());
 function willBonusBeCreated() {
-    return Math.floor(Math.random() * 2) > 0;
+    return Math.floor(Math.random() * 10) > 0;
 }
