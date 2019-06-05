@@ -16,7 +16,7 @@ var pattern;
 var actualPattern;
 var actualBonus;
 var oldPatternNum;
-var colls, hamburger;
+var colls;
 var bonuses;
 var id = 0;
 var idBonus = 0;
@@ -182,15 +182,6 @@ var MainGame = /** @class */ (function () {
                 bmd.ctx.closePath();
                 floor.body.immovable = true;
                 floor.body.moves = false;
-                // --------HAMBURGER-------
-                bmd = game.add.bitmapData(50, 600);
-                bmd.ctx.beginPath();
-                bmd.ctx.rect(0, 0, 50, 600);
-                bmd.ctx.fillStyle = '#ff0000';
-                bmd.ctx.fill();
-                hamburger = collider.create(0, 0, bmd);
-                bmd.ctx.closePath();
-                hamburger.body.moves = false;
                 // ------------------------
                 // Collider creations
                 for (var i = 0; i < actualPattern.length; i++) {
@@ -219,17 +210,12 @@ var MainGame = /** @class */ (function () {
                     if (startx === void 0) { startx = 1000; }
                     if (starty === void 0) { starty = 500; }
                     var bon;
-                    console.log(startx);
                     bon = bonusGroup.create(startx, starty, "bonus", game.rnd.integerInRange(0, 10));
                     bon.body.moves = false;
                     bon.data.isTaken = false;
                     bon.body.setSize(50, 50);
                     bon.data.id = idBonus;
                     idBonus++;
-                    if (!willBonusBeCreated()) {
-                        bon.visible = false;
-                        bon.data.isTaken = true;
-                    }
                     return bon;
                 }
             },
@@ -327,7 +313,7 @@ var MainGame = /** @class */ (function () {
                             if (collid.data.id == 0) {
                                 getPattern();
                             }
-                            collid.x = actualPattern[collid.data.id][0] - (200 * (collid.data.id + 1));
+                            collid.x = 800;
                             collid.y = actualPattern[collid.data.id][1];
                             collid.data.hasPassed = false;
                             var rnd = game.rnd.integerInRange(0, 10);
@@ -339,17 +325,15 @@ var MainGame = /** @class */ (function () {
                     if (!isGameOver) {
                         bonus.x -= 10;
                         if (bonus.x <= -50) {
-                            bonus.visible = true;
-                            bonus.data.isTaken = false;
-                            if (!willBonusBeCreated()) {
-                                bonus.visible = false;
-                                bonus.data.isTaken = true;
-                            }
-                            else {
-                                bonus.loadTexture("bonus", game.rnd.integerInRange(0, 10));
-                            }
-                            bonus.x = actualBonus[bonus.data.id][0];
-                            bonus.y = actualBonus[bonus.data.id][1];
+                            bonus.loadTexture("bonus", game.rnd.integerInRange(0, 10));
+                            var newBonus = bonus;
+                            newBonus.x = 800;
+                            newBonus.y = actualBonus[bonus.data.id][1];
+                            newBonus.visible = true;
+                            newBonus.data.isTaken = false;
+                            bonus = newBonus;
+                            console.log("Bonus: " + bonus.data.id + " v: " + bonus.visible + " x: " + bonus.x + " y: " + bonus.y);
+                            console.log(bonus);
                         }
                     }
                 }
@@ -439,6 +423,3 @@ var MainGame = /** @class */ (function () {
     }
     return MainGame;
 }());
-function willBonusBeCreated() {
-    return Math.floor(Math.random() * 10) > 0;
-}

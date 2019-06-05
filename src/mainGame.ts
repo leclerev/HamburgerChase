@@ -22,7 +22,7 @@ var actualPattern: number[][];
 var actualBonus: number[];
 var oldPatternNum: number;
 
-var colls: Array<Phaser.Sprite>, hamburger: Phaser.Sprite;
+var colls: Array<Phaser.Sprite>;
 var bonuses: Array<Phaser.Sprite>;
 var id = 0;
 var idBonus = 0;
@@ -236,19 +236,6 @@ class MainGame {
                 
                 floor.body.immovable = true;
                 floor.body.moves = false;
-
-                // --------HAMBURGER-------
-
-                bmd = game.add.bitmapData(50, 600);
-                bmd.ctx.beginPath();
-                bmd.ctx.rect(0, 0, 50, 600);
-                bmd.ctx.fillStyle = '#ff0000';
-                bmd.ctx.fill();
-                hamburger = collider.create(0, 0, bmd);
-                bmd.ctx.closePath();
-    
-                hamburger.body.moves = false;
-
                 // ------------------------
 
         
@@ -282,8 +269,7 @@ class MainGame {
 
                 function createBonus(startx: number = 1000, starty: number = 500) {
                     let bon: Phaser.Sprite;
-
-                    console.log(startx);
+                    
                     bon = bonusGroup.create(startx, starty, "bonus", game.rnd.integerInRange(0, 10));
                 
                     bon.body.moves = false;
@@ -291,11 +277,6 @@ class MainGame {
                     bon.body.setSize(50, 50);
                     bon.data.id = idBonus;
                     idBonus++;
-                
-                    if(!willBonusBeCreated()) {
-                        bon.visible = false;
-                        bon.data.isTaken = true;
-                    }
                     
                     return bon;
                 }
@@ -409,7 +390,7 @@ class MainGame {
                             if(collid.data.id == 0) {
                                 getPattern();
                             }
-                            collid.x = actualPattern[collid.data.id][0] - (200 * (collid.data.id + 1));
+                            collid.x = 800;
                             collid.y = actualPattern[collid.data.id][1];
                             collid.data.hasPassed = false;
 
@@ -423,16 +404,15 @@ class MainGame {
                     if(!isGameOver) {
                         bonus.x-=10;
                         if(bonus.x <= -50) {
-                            bonus.visible = true;
-                            bonus.data.isTaken = false;
-                            if(!willBonusBeCreated()) {
-                                bonus.visible = false;
-                                bonus.data.isTaken = true;
-                            } else {
-                                bonus.loadTexture("bonus", game.rnd.integerInRange(0, 10));
-                            }
-                            bonus.x = actualBonus[bonus.data.id][0];
-                            bonus.y = actualBonus[bonus.data.id][1];
+                            bonus.loadTexture("bonus", game.rnd.integerInRange(0, 10));
+                            let newBonus = bonus;
+                            newBonus.x = 800;
+                            newBonus.y = actualBonus[bonus.data.id][1];
+                            newBonus.visible = true;
+                            newBonus.data.isTaken = false;
+                            bonus = newBonus;
+                            console.log("Bonus: " + bonus.data.id + " v: " + bonus.visible + " x: " + bonus.x + " y: " + bonus.y);
+                            console.log(bonus);
                         }
                     }
                 }
@@ -540,8 +520,4 @@ class MainGame {
         game.state.start("menu");
     }
 
-}
-                
-function willBonusBeCreated() {
-    return Math.floor(Math.random() * 10) > 0;
 }
