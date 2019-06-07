@@ -8,6 +8,7 @@ var player: Phaser.Sprite;
 var isPlayerHit: boolean;
 
 var cursor: Phaser.CursorKeys;
+var keysInp: {up: Phaser.Key, down: Phaser.Key, left: Phaser.Key, right: Phaser.Key};
 var holdJumpTime: number = 0;
 var maxHoldJumpTime: number = 10;
 
@@ -111,6 +112,7 @@ class MainGame {
                 sortHighScore();
         
                 cursor = game.input.keyboard.createCursorKeys();
+                keysInp = {up: cursor.up, down : cursor.down, left: cursor.left, right: cursor.right};
             },
 
             create: function() {
@@ -149,13 +151,13 @@ class MainGame {
 
             update: function() {
 
-                if(cursor.up.justDown) {
+                if(keysInp.up.justDown) {
                     selectedOption--;
                     if(selectedOption < 0)
                         selectedOption = allOptions.length - 1;
                 }
 
-                if(cursor.down.justDown) {
+                if(keysInp.down.justDown) {
                     selectedOption++;
                     if(selectedOption > allOptions.length - 1)
                         selectedOption = 0;
@@ -246,8 +248,6 @@ class MainGame {
         
                 player.animations.add('right', [5, 6, 7, 8], 10, true);
                 player.animations.play('right');
-        
-                //cursor = game.input.keyboard.createCursorKeys();
 
                 for(let i = 0; i <= 800/game.cache.getImage("ground").width + 1; i++) {
                     floor[i] = game.add.sprite(game.cache.getImage("ground").width*i, 550, "ground");
@@ -364,7 +364,7 @@ class MainGame {
                 if(Math.floor(gameTime - (actualTime / 1000) / 60) == 0 && actualSeconds == 0)
                     gameOver = true;
         
-                if (cursor.up.isDown && (isGrounded || holdJumpTime < maxHoldJumpTime) && game.physics.arcade.gravity.y <= 500 && !gameOver) {
+                if (keysInp.up.isDown && (isGrounded || holdJumpTime < maxHoldJumpTime) && game.physics.arcade.gravity.y <= 500 && !gameOver) {
                     if(holdJumpTime == 0)
                         player.body.velocity.y = -300;
                     else
@@ -372,13 +372,13 @@ class MainGame {
                     holdJumpTime++;
                 }
         
-                if(cursor.up.isUp)
+                if(keysInp.up.isUp)
                     holdJumpTime = maxHoldJumpTime;
         
                 if(isGrounded)
                     holdJumpTime = 0;
         
-                if (cursor.down.isDown && !gameOver) {
+                if (keysInp.down.isDown && !gameOver) {
                     player.body.velocity.y = player.body.velocity.y < 0 ? 0 : player.body.velocity.y;
                     game.physics.arcade.gravity.y = 2500;
                 } else if (!gameOver) {
@@ -450,10 +450,7 @@ class MainGame {
             }
                         
         });
-
-        /* game.state.add("endAnimation", {
-
-        });*/
+        
         let x = 33, y = 243;
         var graphics: Phaser.Graphics;
 
@@ -495,25 +492,25 @@ class MainGame {
                 graphics.lineStyle(2, 0xFFFFFF, 1);
                 var rect = graphics.drawRect(x, y, 35, 40);
 
-                if(cursor.up.justDown) {
+                if(keysInp.up.justDown) {
                     if(rect.y > 100)
                         rect.y -= 40;
                     else
                         rect.y = 140;
                 }
-                if(cursor.down.justDown) {
+                if(keysInp.down.justDown) {
                     if(rect.y < 140)
                         rect.y += 40;
                     else
                         rect.y = 100;
                 }
-                if(cursor.left.justDown) {
+                if(keysInp.left.justDown) {
                     if(rect.x > 100)
                         rect.x -= 40;
                     else
                         rect.x = 580;
                 }
-                if(cursor.right.justDown) {
+                if(keysInp.right.justDown) {
                     if(rect.x < 580)
                         rect.x += 40;
                     else

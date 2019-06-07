@@ -5,6 +5,7 @@ var scoreText;
 var player;
 var isPlayerHit;
 var cursor;
+var keysInp;
 var holdJumpTime = 0;
 var maxHoldJumpTime = 10;
 var hasTouchedGound;
@@ -92,6 +93,7 @@ var MainGame = /** @class */ (function () {
                     highscores = JSON.parse(highscoresStr);
                 sortHighScore();
                 cursor = game.input.keyboard.createCursorKeys();
+                keysInp = { up: cursor.up, down: cursor.down, left: cursor.left, right: cursor.right };
             },
             create: function () {
                 game.stage.backgroundColor = "#000000";
@@ -118,12 +120,12 @@ var MainGame = /** @class */ (function () {
                 keys = game.input.keyboard.addKeys({ "enter": Phaser.Keyboard.ENTER, "space": Phaser.Keyboard.SPACEBAR });
             },
             update: function () {
-                if (cursor.up.justDown) {
+                if (keysInp.up.justDown) {
                     selectedOption--;
                     if (selectedOption < 0)
                         selectedOption = allOptions.length - 1;
                 }
-                if (cursor.down.justDown) {
+                if (keysInp.down.justDown) {
                     selectedOption++;
                     if (selectedOption > allOptions.length - 1)
                         selectedOption = 0;
@@ -193,7 +195,6 @@ var MainGame = /** @class */ (function () {
                 player.body.setSize(20, 32, 5, 16);
                 player.animations.add('right', [5, 6, 7, 8], 10, true);
                 player.animations.play('right');
-                //cursor = game.input.keyboard.createCursorKeys();
                 for (var i = 0; i <= 800 / game.cache.getImage("ground").width + 1; i++) {
                     floor[i] = game.add.sprite(game.cache.getImage("ground").width * i, 550, "ground");
                     ground.add(floor[i]);
@@ -287,18 +288,18 @@ var MainGame = /** @class */ (function () {
                 timeFont.text = timeText + Math.floor(gameTime - (actualTime / 1000) / 60).toString() + ":" + (actualSeconds < 10 ? "0" : "") + actualSeconds.toString();
                 if (Math.floor(gameTime - (actualTime / 1000) / 60) == 0 && actualSeconds == 0)
                     gameOver = true;
-                if (cursor.up.isDown && (isGrounded || holdJumpTime < maxHoldJumpTime) && game.physics.arcade.gravity.y <= 500 && !gameOver) {
+                if (keysInp.up.isDown && (isGrounded || holdJumpTime < maxHoldJumpTime) && game.physics.arcade.gravity.y <= 500 && !gameOver) {
                     if (holdJumpTime == 0)
                         player.body.velocity.y = -300;
                     else
                         player.body.velocity.y -= 10;
                     holdJumpTime++;
                 }
-                if (cursor.up.isUp)
+                if (keysInp.up.isUp)
                     holdJumpTime = maxHoldJumpTime;
                 if (isGrounded)
                     holdJumpTime = 0;
-                if (cursor.down.isDown && !gameOver) {
+                if (keysInp.down.isDown && !gameOver) {
                     player.body.velocity.y = player.body.velocity.y < 0 ? 0 : player.body.velocity.y;
                     game.physics.arcade.gravity.y = 2500;
                 }
@@ -366,9 +367,6 @@ var MainGame = /** @class */ (function () {
                 }
             }
         });
-        /* game.state.add("endAnimation", {
-
-        });*/
         var x = 33, y = 243;
         var graphics;
         var indexName = 0;
@@ -398,25 +396,25 @@ var MainGame = /** @class */ (function () {
             update: function () {
                 graphics.lineStyle(2, 0xFFFFFF, 1);
                 var rect = graphics.drawRect(x, y, 35, 40);
-                if (cursor.up.justDown) {
+                if (keysInp.up.justDown) {
                     if (rect.y > 100)
                         rect.y -= 40;
                     else
                         rect.y = 140;
                 }
-                if (cursor.down.justDown) {
+                if (keysInp.down.justDown) {
                     if (rect.y < 140)
                         rect.y += 40;
                     else
                         rect.y = 100;
                 }
-                if (cursor.left.justDown) {
+                if (keysInp.left.justDown) {
                     if (rect.x > 100)
                         rect.x -= 40;
                     else
                         rect.x = 580;
                 }
-                if (cursor.right.justDown) {
+                if (keysInp.right.justDown) {
                     if (rect.x < 580)
                         rect.x += 40;
                     else
