@@ -14,15 +14,17 @@ var maxHoldJumpTime: number = 10;
 var hasTouchedGound: boolean;
 
 var bmd: Phaser.BitmapData;
-var floor: Phaser.Sprite;
+//var floor: Phaser.Sprite;
 var collider: Phaser.Group;
 var bonusGroup: Phaser.Group;
+var ground: Phaser.Group;
 var pattern: any;
 var actualPattern: number[][];
 var actualBonus: number[];
 var oldPatternNum: number;
 
-var colls: Array<Phaser.Sprite>;
+var groundILast: number;
+var colls: Array<Phaser.Sprite>, floor: Array<Phaser.Sprite>;
 var bonuses: Array<Phaser.Sprite>;
 var id = 0;
 var idBonus = 0;
@@ -80,19 +82,40 @@ class MainGame {
 
         var nameChars = Array<Phaser.BitmapText>();
 
+        var highscores: Array<{name, score}>;
+
         game.state.add("menu", {
             preload: function() {
                 game.load.bitmapFont('gem', './assets/font/gem.png', './assets/font/gem.xml');                
                 game.load.spritesheet('dude', './assets/sprites/dude.png', 32, 48);
                 game.load.spritesheet('bonus', './assets/sprites/bonussheet.png', 32, 32, 11);
                 game.load.spritesheet('malus', './assets/sprites/malussheet.png', 32, 32, 11);
+                game.load.image('ground', './assets/sprites/ground.png');
         
                 game.load.json('pattern', "json/pattern.json");
+
+                // HIGHSCORE ITEMS
+                let highscoresStr = localStorage.getItem("highscores");
+                if(!highscoresStr) {
+                    localStorage.setItem("highscores", JSON.stringify( [
+                        {"name": "DOE", "score": 990},
+                        {"name": "JOE", "score": 950},
+                        {"name": "VVV", "score": 975},
+                        {"name": "AAA", "score": 945},
+                        {"name": "AZE", "score": 1100}
+                    ] ));
+                    highscores = JSON.parse(localStorage.getItem("highscores"));
+                }
+                else
+                    highscores = JSON.parse(highscoresStr);
+                sortHighScore();
         
                 cursor = game.input.keyboard.createCursorKeys();
             },
 
             create: function() {
+                game.stage.backgroundColor = "#000000";
+
                 allOptions = [];
                 selectedOption = 0;
 
@@ -113,18 +136,13 @@ class MainGame {
 
                 allOptions.push(highScoreFont);
 
-                var testFont = game.add.bitmapText(game.world.centerX, 400, 'gem', "", 30);
-                testFont.text = "Lalilulelo";
-                testFont.x = game.world.centerX - menuFont.textWidth / 2;
-
-                allOptions.push(testFont);
+                var creditFont = game.add.bitmapText(game.world.centerX, 450, 'gem', "", 30);
+                creditFont.text = "Created by InProgress";
+                creditFont.x = game.world.centerX - creditFont.textWidth / 2;
 
                 selectionFont = game.add.bitmapText(game.world.centerX, 40, 'gem', "", 30);
                 selectionFont.text = "->";
                 selectionFont.x = game.world.centerX - menuFont.textWidth / 2 - 50;
-
-                /*let bonus = game.add.sprite(10, 10, "bonus", Bonus.Banane);
-                let malus = game.add.sprite(50, 10, "malus", Malus.Sandwich);*/
 
                 keys = game.input.keyboard.addKeys({"enter": Phaser.Keyboard.ENTER, "space": Phaser.Keyboard.SPACEBAR});
             },
@@ -164,6 +182,8 @@ class MainGame {
             },*/
         
             create: function() {
+                game.stage.backgroundColor = "#1A1C4A";
+
                 // INIT
                 holdJumpTime = 0;
                 maxHoldJumpTime = 10;
@@ -180,6 +200,7 @@ class MainGame {
                 waitImmort = 3;
                 wait = 0;
                 colls = [];
+                floor = [];
                 bonuses = [];
                 isPlayerHit = false;
         
@@ -199,7 +220,11 @@ class MainGame {
                 bonusGroup = game.add.group();
                 bonusGroup.enableBody = true;
                 bonusGroup.physicsBodyType = Phaser.Physics.ARCADE;
-        
+
+                ground = game.add.group();
+                ground.enableBody = true;
+                ground.physicsBodyType = Phaser.Physics.ARCADE;
+                
                 scoreText = "Score: ";
                 scoreValue = 0;
         
@@ -223,19 +248,17 @@ class MainGame {
                 player.animations.play('right');
         
                 //cursor = game.input.keyboard.createCursorKeys();
-                
-                bmd = game.add.bitmapData(800, 50);
-                
-                bmd.ctx.beginPath();
-                bmd.ctx.rect(0, 0, 800, 50);
-                bmd.ctx.fillStyle = '#ffff0f';
-                bmd.ctx.fill();
-                floor = game.add.sprite(0, 550, bmd);
+
+                for(let i = 0; i <= 800/game.cache.getImage("ground").width + 1; i++) {
+                    floor[i] = game.add.sprite(game.cache.getImage("ground").width*i, 550, "ground");
+                    ground.add(floor[i]);
+                    floor[i].body.immovable = true;
+                    floor[i].body.moves = false;
+                    floor[i].height = 50;
+                    groundILast = i;
+                }
+
                 game.physics.enable(floor, Phaser.Physics.ARCADE);
-                bmd.ctx.closePath();
-                
-                floor.body.immovable = true;
-                floor.body.moves = false;
                 // ------------------------
 
         
@@ -271,7 +294,7 @@ class MainGame {
                     let bon: Phaser.Sprite;
                     
                     bon = bonusGroup.create(startx, starty, "bonus", game.rnd.integerInRange(0, 10));
-                
+
                     bon.body.moves = false;
                     bon.data.isTaken = false;
                     bon.body.setSize(50, 50);
@@ -282,7 +305,19 @@ class MainGame {
                 }
             },
         
-            update: function() {        
+            update: function() {     
+                //Floor movement
+                for(let i = 0; i < floor.length; i++) {
+                    floor[i].x -= 10;
+                    if(floor[i].x + floor[i].width <= 0) {
+                        floor[i].x = floor[groundILast].x + floor[groundILast].width;
+                        if(i == 0)
+                            floor[i].x -= 10;
+                        groundILast = i;
+                    }
+                }
+                
+
                 for(let i = 0; i < colls.length; i++) {
                     colliderManager(colls[i], gameOver);
                 }
@@ -312,7 +347,7 @@ class MainGame {
                     isPlayerHit = true;
                     wait = game.time.now/1000 + waitImmort;
                     blinkTime = 0;
-                    scoreValue -= 50;
+                    scoreValue -= 20;
                 }
         
                 if(isPlayerHit) {
@@ -354,7 +389,7 @@ class MainGame {
                 }
 
                 function bonusCollisionHandler(player, bonus) {
-                    if(!bonus.data.isTaken && bonus.visible) {
+                    if(!bonus.data.isTaken && bonus.visible && Math.abs((player.x + player.width) - bonus.x) < 50) {
                         bonus.visible = false;
                         scoreValue += 15;
                         bonus.data.isTaken = true;
@@ -405,14 +440,10 @@ class MainGame {
                         bonus.x-=10;
                         if(bonus.x <= -50) {
                             bonus.loadTexture("bonus", game.rnd.integerInRange(0, 10));
-                            let newBonus = bonus;
-                            newBonus.x = 800;
-                            newBonus.y = actualBonus[bonus.data.id][1];
-                            newBonus.visible = true;
-                            newBonus.data.isTaken = false;
-                            bonus = newBonus;
-                            console.log("Bonus: " + bonus.data.id + " v: " + bonus.visible + " x: " + bonus.x + " y: " + bonus.y);
-                            console.log(bonus);
+                            bonus.x = 800;
+                            bonus.y = actualBonus[bonus.data.id][1];
+                            bonus.data.isTaken = false;
+                            bonus.visible = true;
                         }
                     }
                 }
@@ -430,6 +461,7 @@ class MainGame {
 
         game.state.add("enterHS", {
             create: function() {
+                game.stage.backgroundColor = "#000000";
                 keys = game.input.keyboard.addKeys({"space": Phaser.Keyboard.SPACEBAR});
 
                 var menuFont = game.add.bitmapText(game.world.centerX, 40, 'gem', "", 50);
@@ -493,20 +525,45 @@ class MainGame {
                     nameChars[indexName].text = String.fromCharCode(indexX + (indexY * 13) + 97).toUpperCase();
                     if(indexName < 2)
                         indexName++;
-                    else
+                    else {
                         game.state.start("highscore");
+                        let enteredHS = {"name": "", "score": scoreValue};
+                        nameChars.forEach(char => { enteredHS.name += char.text});
+                        let minHSValue = highscores[highscores.length - 1].score;
+                        console.log(minHSValue);
+                        if(enteredHS.score > minHSValue) {
+                            highscores.splice(4, 1, enteredHS);
+                            sortHighScore();
+                            localStorage.setItem("highscores", JSON.stringify(highscores));
+                        }
+                    }
                 }
             }
         });
 
         game.state.add("highscore", {
             create: function() {
+                console.log(highscores);
+
                 keys = game.input.keyboard.addKeys({"enter": Phaser.Keyboard.ENTER, "space": Phaser.Keyboard.SPACEBAR});
 
-                var menuFont = game.add.bitmapText(game.world.centerX, 40, 'gem', "", 50);
-                var menuText = "Your score: " + scoreValue;
-                menuFont.text = menuText;
+                var menuFont = game.add.bitmapText(game.world.centerX, 40, 'gem', "", 51);
+                menuFont.text = "Highscore";
                 menuFont.x = game.world.centerX - menuFont.textWidth / 2;
+                
+                var pScoreFont = game.add.bitmapText(game.world.centerX, 100, 'gem', "", 50);
+                pScoreFont.text = scoreValue != undefined ? "Your score: " + scoreValue : "";
+                pScoreFont.x = game.world.centerX - pScoreFont.textWidth / 2;
+
+                // Order highscore by score
+                sortHighScore();
+
+                var highscoreFonts: Array<Phaser.BitmapText> = [];
+                highscores.forEach((highscore, i) => {
+                    highscoreFonts[i] = game.add.bitmapText(20, 180 + 50 * i, 'gem', "", 45);
+                    highscoreFonts[i].text = (i+1) + ": " + highscore.name + " " + highscore.score;
+                    highscoreFonts[i].x = game.world.centerX - menuFont.textWidth / 2 - 15;
+                });
             },
 
             update: function(){
@@ -518,6 +575,10 @@ class MainGame {
 
         // INITIAL GAME STATE
         game.state.start("menu");
+
+        function sortHighScore() {
+            highscores.sort((a: any,b: any) => (a.score < b.score) ? 1 : -1);
+        }
     }
 
 }
