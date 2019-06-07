@@ -25,7 +25,7 @@ var actualBonus: number[];
 var oldPatternNum: number;
 
 var groundILast: number;
-var colls: Array<Phaser.Sprite>, floor: Array<Phaser.Sprite>;
+var colls: Array<Phaser.Sprite>, floor: Array<Phaser.Sprite>, grasses: Array<Phaser.Sprite>;
 var bonuses: Array<Phaser.Sprite>;
 var id = 0;
 var idBonus = 0;
@@ -92,6 +92,7 @@ class MainGame {
                 game.load.spritesheet('bonus', './assets/sprites/bonussheet.png', 32, 32, 11);
                 game.load.spritesheet('malus', './assets/sprites/malussheet.png', 32, 32, 11);
                 game.load.image('ground', './assets/sprites/ground.png');
+                game.load.image('grass', './assets/sprites/grass.png');
         
                 game.load.json('pattern', "json/pattern.json");
 
@@ -203,6 +204,7 @@ class MainGame {
                 wait = 0;
                 colls = [];
                 floor = [];
+                grasses = [];
                 bonuses = [];
                 isPlayerHit = false;
         
@@ -256,6 +258,9 @@ class MainGame {
                     floor[i].body.moves = false;
                     floor[i].height = 50;
                     groundILast = i;
+
+                    // Grass
+                    grasses[i] = game.add.sprite(game.cache.getImage("grass").width*i, 550 - game.cache.getImage("grass").height, "grass");
                 }
 
                 game.physics.enable(floor, Phaser.Physics.ARCADE);
@@ -315,6 +320,7 @@ class MainGame {
                             floor[i].x -= 10;
                         groundILast = i;
                     }
+                    grasses[i].x = floor[i].x;
                 }
                 
 

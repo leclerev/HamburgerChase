@@ -19,7 +19,7 @@ var actualPattern;
 var actualBonus;
 var oldPatternNum;
 var groundILast;
-var colls, floor;
+var colls, floor, grasses;
 var bonuses;
 var id = 0;
 var idBonus = 0;
@@ -76,6 +76,7 @@ var MainGame = /** @class */ (function () {
                 game.load.spritesheet('bonus', './assets/sprites/bonussheet.png', 32, 32, 11);
                 game.load.spritesheet('malus', './assets/sprites/malussheet.png', 32, 32, 11);
                 game.load.image('ground', './assets/sprites/ground.png');
+                game.load.image('grass', './assets/sprites/grass.png');
                 game.load.json('pattern', "json/pattern.json");
                 // HIGHSCORE ITEMS
                 var highscoresStr = localStorage.getItem("highscores");
@@ -163,6 +164,7 @@ var MainGame = /** @class */ (function () {
                 wait = 0;
                 colls = [];
                 floor = [];
+                grasses = [];
                 bonuses = [];
                 isPlayerHit = false;
                 pattern = game.cache.getJSON("pattern", true);
@@ -202,6 +204,8 @@ var MainGame = /** @class */ (function () {
                     floor[i].body.moves = false;
                     floor[i].height = 50;
                     groundILast = i;
+                    // Grass
+                    grasses[i] = game.add.sprite(game.cache.getImage("grass").width * i, 550 - game.cache.getImage("grass").height, "grass");
                 }
                 game.physics.enable(floor, Phaser.Physics.ARCADE);
                 // ------------------------
@@ -251,6 +255,7 @@ var MainGame = /** @class */ (function () {
                             floor[i].x -= 10;
                         groundILast = i;
                     }
+                    grasses[i].x = floor[i].x;
                 }
                 for (var i = 0; i < colls.length; i++) {
                     colliderManager(colls[i], gameOver);
