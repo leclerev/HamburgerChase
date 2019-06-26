@@ -35,7 +35,8 @@ var waitImmort: number = 3;
 var wait: number = 0;
 
 var gameOver: boolean = false;
-var gameTime: number = 1; // minutes
+var gameTime: number; // minutes
+var gameTimeSeconds: number;
 var actualTime: number = 0;
 var blinkTime: number = 0;
 var timeFont: Phaser.BitmapText;
@@ -194,7 +195,8 @@ class MainGame {
                 idBonus = 0;
 
                 gameOver = false;
-                gameTime = 1; // minutes
+                gameTime = 0; // minutes
+                gameTimeSeconds = 30;
                 actualTime = 0;
                 blinkTime = 0;
 
@@ -365,9 +367,16 @@ class MainGame {
                 }
         
                 scoreFont.text = scoreText + scoreValue.toString();
-                let actualSeconds: number = Math.floor(60 - (actualTime / 1000) % 60);
-                timeFont.text = timeText + Math.floor(gameTime - (actualTime / 1000) / 60).toString() + ":" + (actualSeconds < 10 ? "0" : "") + actualSeconds.toString();
-                if(Math.floor(gameTime - (actualTime / 1000) / 60) == 0 && actualSeconds == 0)
+                if(gameTimeSeconds == 0) {
+                    gameTimeSeconds = 60;
+                    gameTime--;
+                }
+                let actualSeconds = Math.floor(gameTimeSeconds - (actualTime / 1000) % 60);
+                if(gameTime == 0)
+                    gameTime = 1;
+                let actualMinutes: number = Math.floor(gameTime - (actualTime / 1000) / 60);
+                timeFont.text = timeText + actualMinutes.toString() + ":" + (actualSeconds < 10 ? "0" : "") + actualSeconds.toString();
+                if(actualMinutes == 0 && actualSeconds == 0)
                     gameOver = true;
         
                 if (keysInp.up.isDown && (isGrounded || holdJumpTime < maxHoldJumpTime) && game.physics.arcade.gravity.y <= 500 && !gameOver) {
